@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>{{.PageTitle}}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Pacifico&display=swap" rel="stylesheet">
+    <link href="/static/material.css" rel="stylesheet" type="text/css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="/static/material.js"></script>
+</head>
+
+<body>
+    <div class="demo-layout-waterfall mdl-layout mdl-js-layout mdl-layout--fixed-header">
+        <header class="mdl-layout__header mdl-layout__header--waterfall" style="background-color: rgb(13, 112, 158)">
+
+            <!-- Top row, always visible -->
+            <div class="mdl-layout__header-row">
+                <!-- Title -->
+                <span class="mdl-layout-title">PhotoBook</span>
+
+                <div class="mdl-layout-spacer"></div>
+                <!-- Right aligned menu below button -->
+                <button id="demo-menu-lower-right" class="mdl-button mdl-js-button mdl-button--icon">
+                    <i class="material-icons">more_vert</i>
+                </button>
+
+                <ul id="rightMenu" class="mdl-menu mdl-menu--bottom-right mdl-js-menu mdl-js-ripple-effect"
+                    for="demo-menu-lower-right">
+                    {{range .Todos}}
+                    {{if .Done}}
+                    <li class="mdl-menu__item" , id="done">{{.Title}}</li>
+                    {{else}}
+                    <li class="mdl-menu__item">{{.Title}}</li>
+                    {{end}}
+                    {{end}}
+                </ul>
+
+            </div>
+        </header>
+        <div class="mdl-layout__drawer">
+            <span class="mdl-layout-title">{{.PageTitle}}</span>
+            <nav id="leftMenu" class="mdl-navigation">
+                {{range .Todos}}
+                {{if .Done}}
+                <a class="mdl-navigation__link" id="done" href="">{{.Title}}</a>
+                {{else}}
+                <a class="mdl-navigation__link" href="">{{.Title}}</a>
+                {{end}}
+                {{end}}
+            </nav>
+        </div>
+        <main class="mdl-layout__content">
+            <div class="page-content">
+                <div class="mdl-grid">
+                    <div class="mdl-cell" style="text-align: center; margin:auto">
+                        <h3>Welcome {{.User}}</h3>
+                        <div>
+                            <p>{{printf "%s" .Body}}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

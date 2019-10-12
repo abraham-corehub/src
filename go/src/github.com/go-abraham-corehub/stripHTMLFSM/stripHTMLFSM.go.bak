@@ -1,0 +1,276 @@
+package main
+
+import (
+	"encoding/csv"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"log"
+	"strings"
+)
+
+func main() {
+
+	nameDir := "testCases"
+	_, err := ioutil.ReadDir(nameDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	/*
+		for _, file := range files {
+			name := file.Name()
+			if name[len(name)-5:] == ".html" {
+				nameFileInput := strJoin(strJoin(nameDir, "/"), name)
+				dat, err := ioutil.ReadFile(nameFileInput)
+				textOutput := []byte("")
+				if err == nil {
+					textOutput = stripTagsHTML(dat)
+				}
+				nameFileOutput := strJoin(nameFileInput, ".txt")
+				err = ioutil.WriteFile(nameFileOutput, textOutput, 0644)
+			}
+		}
+	*/
+
+	nameFileInput := strJoin(strJoin(nameDir, "/"), "The Bad.html")
+	dat, err := ioutil.ReadFile(nameFileInput)
+	textOutput := []byte("")
+	if err == nil {
+		textOutput = stripTagsHTML(dat)
+	}
+	fmt.Print(string(textOutput))
+	nameFileOutput := strJoin("out", ".txt")
+	err = ioutil.WriteFile(nameFileOutput, textOutput, 0644)
+
+}
+
+/*
+func stripTagsHTML(dat []byte) []byte {
+	var fsm AbFSM
+	fsm = fsm.createStateTable("stateTable.txt") // State Machine is created from the State Table text file
+
+	st := "initial"
+	out := make([]byte, 0)
+
+	for _, cH := range dat {
+		st = getState(fsm, st, cH)
+		if st == "text" {
+			out = append(out, cH)
+		}
+	}
+
+	return out
+}
+*/
+func stripTagsHTML(dat []byte) []byte {
+	var fsm AbFSM
+	fsm = fsm.createStateTable("stateTable.txt") // State Machine is created from the State Table text file
+
+	st := "initial"
+	out := make([]byte, 0)
+
+	for _, cH := range dat {
+		st = getState(fsm, st, cH)
+		if st == "text" {
+			out = append(out, cH)
+		}
+	}
+
+	return out
+}
+
+/*
+// AbFSM holds the State Transition Table and
+// State Assignment Mappings which defines the State Machine
+type AbFSM struct {
+	sTD   []StateTable    // To define transitions for known inputs
+	sTX   []StateTable    // To define transitions for unknown inputs
+	mS2ID map[string]byte //Map of State Names and State IDs
+}
+*/
+
+// AbFSM holds the State Transition Table and
+// State Assignment Mappings which defines the State Machine
+type AbFSM struct {
+	mSTD  map[cSIn]byte
+	mSTX  map[byte]byte
+	mS2ID map[string]byte //Map of State Names and State IDs
+	mID2S map[byte]string //Map of State IDs and State Names
+}
+
+/*
+type stateTable struct {
+	c1 cSIn
+	c2 byte
+}
+*/
+type cSIn struct {
+	cS byte
+	in byte
+}
+
+/*
+func (fsm AbFSM) createStateTable(nameFileStateTable string) AbFSM {
+	strTable, err := ioutil.ReadFile(nameFileStateTable)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//https://golang.org/pkg/encoding/csv/
+	r := csv.NewReader(strings.NewReader(string(strTable)))
+
+	table := make([][]string, 0)
+	col := make([]string, 0)
+	fsm.sTD = make([]StateTable, 0)
+	fsm.sTX = make([]StateTable, 0)
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+		col = append(col, []string{record[0], record[2]}...)
+		table = append(table, record)
+	}
+	//fmt.Print(table)
+	states := unique(col)
+	fsm.mS2ID = make(map[string]byte)
+	for i, state := range states {
+		fsm.mS2ID[state] = byte(i)
+	}
+	//fmt.Println(fsm.mS2ID)
+	for _, record := range table {
+		if record[1] != "0" {
+			fsm.sTD = append(fsm.sTD, StateTable{byte(fsm.mS2ID[record[0]]), strChar2Byte(record[1]), fsm.mS2ID[record[2]]})
+		} else {
+			fsm.sTX = append(fsm.sTX, StateTable{byte(fsm.mS2ID[record[0]]), record[1][0], fsm.mS2ID[record[2]]})
+		}
+	}
+	//fmt.Println(fsm.sTD)
+	return fsm
+}
+*/
+func (fsm AbFSM) createStateTable(nameFileStateTable string) AbFSM {
+	strTable, err := ioutil.ReadFile(nameFileStateTable)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//https://golang.org/pkg/encoding/csv/
+	r := csv.NewReader(strings.NewReader(string(strTable)))
+
+	table := make([][]string, 0)
+	col := make([]string, 0)
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+		col = append(col, []string{record[0], record[2]}...)
+		table = append(table, record)
+	}
+	//fmt.Print(table)
+	states := unique(col)
+	fsm.mS2ID = make(map[string]byte)
+	fsm.mID2S = make(map[byte]string)
+	for i, state := range states {
+		fsm.mS2ID[state] = byte(i)
+		fsm.mID2S[byte(i)] = state
+	}
+	fsm.mSTD = make(map[cSIn]byte)
+	fsm.mSTX = make(map[byte]byte)
+	//fmt.Println(fsm.mS2ID)
+	for _, record := range table {
+		if record[1] != "0" {
+			fsm.mSTD[cSIn{fsm.mS2ID[record[0]], strChar2Byte(record[1])}] = fsm.mS2ID[record[2]]
+		} else {
+			fsm.mSTX[fsm.mS2ID[record[0]]] = fsm.mS2ID[record[2]]
+		}
+	}
+	//fmt.Println(fsm.mID2S, fsm.mSTD, fsm.mSTX)
+	return fsm
+}
+
+func strChar2Byte(strChar string) byte {
+	if len(strChar) > 1 {
+		switch strChar {
+		case "\\n":
+			return 10
+		case "\\t":
+			return 9
+		case "\\b":
+			return 8
+		case "\\f":
+			return 12
+		case "\\r":
+			return 13
+		}
+	}
+	return strChar[0]
+}
+
+/*
+func getState(fsm AbFSM, stateName string, inCh byte) string {
+	st := fsm.mS2ID[stateName]
+
+	flagElse := true
+
+	if flagElse {
+		for _, rowST := range fsm.sTX {
+			if st == rowST.cS {
+				st = rowST.nS
+				break
+			}
+		}
+	}
+
+	for k, v := range fsm.mS2ID {
+		if v == st {
+			stateName = k
+			break
+		}
+	}
+
+	return stateName
+}
+*/
+func getState(fsm AbFSM, stateName string, inCh byte) string {
+	nS, prs := fsm.mSTD[cSIn{fsm.mS2ID[stateName], inCh}]
+	if prs {
+		stateName = fsm.mID2S[nS]
+	} else {
+		nS, prs = fsm.mSTX[fsm.mS2ID[stateName]]
+		if prs {
+			stateName = fsm.mID2S[nS]
+		}
+	}
+	return stateName
+}
+
+// StateTable is the Template for the rows of
+// the State Transition Table to create the State Machine
+type StateTable struct {
+	cS byte // Current State
+	in byte // Input
+	nS byte // Next State
+}
+
+func strJoin(strA string, strB string) string {
+	return strings.Join([]string{strA, strB}, "")
+}
+
+//Unique https://www.golangprograms.com/remove-duplicate-values-from-slice.html
+func unique(stringSlice []string) []string {
+	keys := make(map[string]bool)
+	list := []string{}
+	for _, entry := range stringSlice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
+}

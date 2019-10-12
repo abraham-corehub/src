@@ -1,0 +1,15 @@
+initial,<,tag_in
+tag_in,>,tag_out
+text,<,tag_in
+text, ,space
+text,\n,skip
+space, ,skip
+space,\n,skip
+skip,<,tag_in
+skip,\n,skip
+skip, ,skip
+text,0,text
+tag_out,0,text
+space,0,text
+skip,0,text
+tag_in,0,tag_in

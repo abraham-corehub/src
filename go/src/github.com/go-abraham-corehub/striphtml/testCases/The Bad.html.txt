@@ -1,0 +1,22 @@
+
+
+
+
+
+	
+	Am bad    
+	
+
+
+
+
+
+    alert("Am a duck");
+
+
+
+P tag doesn't always end with an end tag, bad for u.
+One   equal to 2
+<!-- F.C.U.K U
+
+

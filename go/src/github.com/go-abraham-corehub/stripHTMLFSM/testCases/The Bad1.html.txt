@@ -1,0 +1,15 @@
+
+
+
+
+
+	
+	Am bad 	
+
+
+
+
+
+ alert("Am a <b>duck");</head>
+P tag doesn't always end with an end tag, bad for u.One <!--not --> equal to 2F.C.U.K U -->
+

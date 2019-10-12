@@ -1,0 +1,5 @@
+"map",
+"script",
+"style",
+"object",
+"applet"

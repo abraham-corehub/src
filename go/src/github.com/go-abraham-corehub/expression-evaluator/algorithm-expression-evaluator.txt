@@ -1,0 +1,24 @@
+1. input expression string 'expression'
+2. remove non operators and non numbers including spaces from 'expression'
+3. extract operators and numbers from the 'expression'
+4. begin single operand evaluation (prefix notation, i.e operator is in the left side of the number)
+5. obtain positions of numbers and operators
+6. get the first operator
+6.1 get the distance between the positions of the operator and its corresponding next adjacent number
+6.2 if the 'distance' is larger than 1 goto step 6.2.1 else goto step 6.3 
+6.2.1 perform the operation as per the symbol and store the result
+6.2.2 replace the numbers involved in the operation with the result
+6.2.3 remove the operator from the operators list
+6.2.4 if there are more operators, get the next operator and goto step 6.1 else goto step 6.4
+6.3 if the distance is 1 and if the number is the first number goto 6.2.1 
+6.4 finish the evaluation and return 'arrayIntegers' and 'arrayOperators'
+----
+7. perform two operands evaluation with 'arrayOperators' and 'arrayIntegers'
+7.1 find the position of an operator in 'arrayOperator' as per the order of preference (EDMAS)
+7.2 get the operand numbers on either sides of the operator
+7.3 perform the operation as per the operator symbol and store the result in 'result'
+7.4 remove the operator symbol from 'arrayOperators' 
+7,6 replace the operand numbers in 'arrayIntegers' with the 'result'
+7.7 repeat from step 5.1 until the 'arrayOperators' is empty
+8. finish the evaluation operation
+9. return the result

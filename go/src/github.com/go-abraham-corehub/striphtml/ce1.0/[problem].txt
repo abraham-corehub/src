@@ -1,0 +1,42 @@
+Coding Exercise CE1.0
+=====================
+
+Latest version of this document avaliable [here](http://notepag.es/aCodersCE1).
+
+You are supposed to write a program that would read an html file and print its
+content as plain text.
+For eg:
+
+    <p>Hello <b>Cruel</b><a href="http://www.worldbank.org">world</a></p>
+
+is converted to
+
+    Hello Cruel world
+
+Requirements
+------------
+ -  Output starts with the Document title if it exists. Title should be underlined
+  with `=` and followed by 2 newlines. 
+ -  All block level elements & `br` should be prefixed OR suffixed with a new 
+	line so that the plain text is readable.
+ -	For intending lines/list items , use `TAB` character. 
+ -	`hr` should be replaced with a 80 char long line made up of underscores.
+ -	HTML Special Entities need not be processed, but you can if you wish.
+ -	We can forget about character encoding. Expect all text to be simple plain
+	text (aka ASCII).
+ -	You cannot use any HTML/XML Parser libraries/functions or regex.
+	You need to do it all with your own code.
+	Eg: You cannot use php `strip_tag()` function or python `HTMLParser` 
+ -	The program would be invoked with 1st argument as path to HTML file. This 
+	file should be read and its content printed as plain text.
+	
+Test Cases
+----------
+The test cases for your code can be found in `ce1_test_cases.zip`. It contains
+some html files and their expected output. You are free to deviate from this
+ideal output but its always better if you can come up with something more 
+similar. For the application to be considered functional, it should handle 
+`The good.html` correctly. If it processes `The Bad.html` well, we can consider 
+the application done. If you really feel **smart** and wanna do it all *RIGHT*,
+you need process `The Ugly.html` correctly. For development, start getting 
+things done for `404.html`

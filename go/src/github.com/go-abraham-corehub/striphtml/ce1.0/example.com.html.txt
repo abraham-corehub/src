@@ -1,0 +1,36 @@
+IANA - Example domains
+======================
+
+
+Domains
+Numbers
+Protocols
+About IANA
+
+Example Domains
+
+As described in RFC 2606,
+we maintain a number of domains such as EXAMPLE.COM and EXAMPLE.ORG
+for documentation purposes. These domains may be used as illustrative
+examples in documents without prior coordination with us. They are 
+not available for registration.
+
+About
+Presentations
+Performance
+Reports
+
+Domains
+Root Zone
+.INT
+.ARPA
+IDN Repository
+
+Protocols
+
+Number Resources
+Abuse Information
+
+IANA is operated by theInternet Corporation for Assigned Names and Numbers
+
+Please direct general feedback regarding IANA to iana@iana.org.

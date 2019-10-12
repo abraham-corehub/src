@@ -1,0 +1,85 @@
+initial,<,tag_i
+info!,-,comment_in
+info!,",info!Quote
+info!Quote,",info!
+tag_i,<,tag_i
+tag_i,>,tag_o
+tag_i,!,info!
+tag_i,t,title_tag_i
+title_tag_i,>,title_tag_o
+title_tag_o, ,title_skip
+title_tag_o,\n,title_skip
+title_tag_o,\t,title_skip
+title_tag_o,\r,title_skip
+title,<,title_tag_close
+title, ,title_space
+title_space, ,title_skip
+title_space,\t,title_skip
+title_space,\n,title_skip
+title_space,\r,title_skip
+title_space,0,title
+title,\n,title_skip
+title,\t,title_skip
+title,\r,title_skip
+title_skip,<,title_tag_close_in
+title_skip, ,title_skip
+title_skip,\t,title_skip
+title_skip,\n,title_skip
+title_skip,\r,title_skip
+title_skip,0,title
+title_tag_close_in,/,title_tag_close
+title_tag_close,>,tag_o
+tag_i,p,p_tag_i
+tag_i,s,script_tag_i
+tag_i,0,tag_name
+tag_name,>,tag_o
+tag_name,<,tag_i
+tag_name, ,attr
+tag_o,0,text
+tag_o,<,tag_i
+tag_o,>,tag_o
+tag_o, ,skip
+tag_o,\n,skip
+tag_o,\r,skip
+tag_o,\t,skip
+text,<,tag_i
+text,>,tag_o
+text, ,space
+text,\n,skip
+text,\r,skip
+text,\t,skip
+attr, ,attr_space
+attr,>,tag_o
+attr_space,0,attr
+p_tag_i,>,p_tag_o
+p_tag_o,0,text
+script_tag_i, ,script_attr
+script_tag_o,0,script_code
+script_tag_close,/,script_tag_close
+script_tag_close,>,tag_o
+script_attr,>,script_tag_o
+script_code,",script_code_quote_open
+script_code,',script_code_literal_open
+script_code,<,script_tag_close
+script_code_literal,',script_code_literal_close
+script_code_literal_open,0,script_code_literal
+script_code_literal_close,0,script_code
+script_code_quote_close,0,script_code
+script_code_quote_open,",script_code_quote_close
+comment_in,-,comment_in--
+comment_in--,0,comment
+comment,-,comment_out-
+comment_out-,-,comment_out
+comment_out,>,tag_o
+space, ,skip
+space,\n,skip
+space,<,tag_i
+space,>,tag_o
+space,0,text
+skip, ,skip
+skip,<,tag_i
+skip,>,tag_o
+skip,\n,skip
+skip,\r,skip
+skip,\t,skip
+skip,0,text
