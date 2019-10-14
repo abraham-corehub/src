@@ -40,7 +40,7 @@ type AppData struct {
 	Table          DBTable
 	State          string
 	UI             string
-	Error  		   string
+	Error          string
 }
 
 //PageData is a custom type to store Title and Content / Body of the Web Page to be displayed
@@ -176,32 +176,17 @@ func handlerLogin(w http.ResponseWriter, r *http.Request) {
 	if err := isAuthorized(w, r); err != nil {
 		initApp()
 		aD.UI = "login"
-		if err := getFormData(w, r); err != nil {
-			aD.User.Status = err.Error()
-		}
+  if r.Method == "POST" {
+   if err := getFormData(w, r); err != nil {
+    aD.User.Status = err.Error()
+		 } else {
+    http.Redirect(w, r, "/home", http.StatusSeeOther)
+   }
+  }
 		loadPage(w, r)
 		return
 	}
 	http.Redirect(w, r, "/home", http.StatusSeeOther)
-}
-
-func getFormData(w http.ResponseWriter, r *http.Request) error {
-	if err := r.ParseForm(); err != nil {
-		return err
-	}
-	if err := validateCredentials(w, r); err != nil {
-		return err
-	}
-	if err := dbDeleteSession(w, r); err != nil {
-		return err
-	}
-	if err := setCookie(w, r); err != nil {
-		return err
-	}
-	if err := dbStoreSession(w, r); err != nil {
-		return err
-	}
-	return nil
 }
 
 func handlerHome(w http.ResponseWriter, r *http.Request) {
@@ -297,6 +282,41 @@ func handlerViewImage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+
+func isAuthorized(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == "GET" {
+		c, err := r.Cookie("sessionToken")
+		if err == nil {
+			if c.Value == aD.User.SessionToken && aD.User.SessionToken != "" {
+				return nil
+			}
+			return dbSetUserFromSession(w, r, c.Value)
+		}
+		return errors.New("session expired")
+	}
+	return errors.New("unauthorized access")
+}
+
+func getFormData(w http.ResponseWriter, r *http.Request) error {
+ if err := r.ParseForm(); err != nil {
+		return err
+	}
+	if err := validateCredentials(w, r); err != nil {
+		return err
+	}
+	if err := dbDeleteSession(w, r); err != nil {
+		return err
+	}
+	if err := setCookie(w, r); err != nil {
+		return err
+	}
+	if err := dbStoreSession(w, r); err != nil {
+		return err
+	}
+	return nil
+}
+
+
 func showError(w http.ResponseWriter, r *http.Request, err error) {
 	//log.Panicf(err.Error())
 	fmt.Println(err.Error())
@@ -328,20 +348,6 @@ func loadMenuItems() {
 			{Item: "Download Album", Link: "/downloadAlbum"},
 		}
 	}
-}
-
-func isAuthorized(w http.ResponseWriter, r *http.Request) error {
-	if r.Method == "GET" {
-		c, err := r.Cookie("sessionToken")
-		if err == nil {
-			if c.Value == aD.User.SessionToken && aD.User.SessionToken != "" {
-				return nil
-			}
-			return dbSetUserFromSession(w, r, c.Value)
-		}
-		return errors.New("session expired")
-	}
-	return errors.New("unauthorized access")
 }
 
 func validateCredentials(w http.ResponseWriter, r *http.Request) error {
@@ -489,12 +495,11 @@ func dbCheckCredentials(w http.ResponseWriter, r *http.Request, username string,
 		err = rows.Scan(&name, &role, &id)
 		if err != nil {
 			return err
-		} else {
-			aD.User.Name = name
-			aD.User.Role = role
-			aD.User.ID = id
-			return nil
 		}
+		aD.User.Name = name
+		aD.User.Role = role
+		aD.User.ID = id
+		return nil
 	}
 	return errors.New("db empty")
 }
@@ -516,9 +521,8 @@ func dbGetUsers(w http.ResponseWriter, r *http.Request) error {
 		err = rows.Scan(&id, &name)
 		if err != nil {
 			return err
-		} else {
-			aD.Table.Rows = append(aD.Table.Rows, RowData{Index: id, Row: []ColData{{Value: name}}})
 		}
+		aD.Table.Rows = append(aD.Table.Rows, RowData{Index: id, Row: []ColData{{Value: name}}})
 	}
 	if len(aD.Table.Rows) > 0 {
 		return nil
@@ -545,9 +549,8 @@ func dbGetAlbums(w http.ResponseWriter, r *http.Request) error {
 		err = rows.Scan(&name)
 		if err != nil {
 			return err
-		} else {
-			aD.Table.Rows = append(aD.Table.Rows, RowData{Index: len(aD.Table.Rows) + 1, Row: []ColData{{Value: name}}})
 		}
+		aD.Table.Rows = append(aD.Table.Rows, RowData{Index: len(aD.Table.Rows) + 1, Row: []ColData{{Value: name}}})
 	}
 	if len(aD.Table.Rows) > 0 {
 		return nil
@@ -574,9 +577,8 @@ func dbGetImages(w http.ResponseWriter, r *http.Request, idAlbum string) error {
 		err = rows.Scan(&name)
 		if err != nil {
 			return err
-		} else {
-			aD.Table.Rows = append(aD.Table.Rows, RowData{Index: len(aD.Table.Rows) + 1, Row: []ColData{{Value: name}}})
 		}
+		aD.Table.Rows = append(aD.Table.Rows, RowData{Index: len(aD.Table.Rows) + 1, Row: []ColData{{Value: name}}})
 	}
 	if len(aD.Table.Rows) > 0 {
 		return nil
@@ -704,9 +706,9 @@ func testDB() {
 func conditionString(str string) (string, error) {
 	strN := str
 	/*
-	charsTrim := []byte{
-		' ','\\','"','&','<','>','(',')','|','/','=',';',':','`',
-	}
+		charsTrim := []byte{
+			' ','\\','"','&','<','>','(',')','|','/','=',';',':','`',
+		}
 	*/
 	charsTrim := []byte(`\ ,"'<>{}[]|/=;:.?`)
 	for _, cH := range charsTrim {
