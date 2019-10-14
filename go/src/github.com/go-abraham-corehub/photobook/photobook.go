@@ -11,7 +11,7 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"runtime/debug"
+	_ "runtime/debug"
 	"strconv"
 	"strings"
 	"text/template"
@@ -176,13 +176,13 @@ func handlerLogin(w http.ResponseWriter, r *http.Request) {
 	if err := isAuthorized(w, r); err != nil {
 		initApp()
 		aD.UI = "login"
-  if r.Method == "POST" {
-   if err := getFormData(w, r); err != nil {
-    aD.User.Status = err.Error()
-		 } else {
-    http.Redirect(w, r, "/home", http.StatusSeeOther)
-   }
-  }
+		if r.Method == "POST" {
+			if err := getFormData(w, r); err != nil {
+				aD.User.Status = err.Error()
+			} else {
+				http.Redirect(w, r, "/home", http.StatusSeeOther)
+			}
+		}
 		loadPage(w, r)
 		return
 	}
@@ -282,7 +282,6 @@ func handlerViewImage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
 func isAuthorized(w http.ResponseWriter, r *http.Request) error {
 	if r.Method == "GET" {
 		c, err := r.Cookie("sessionToken")
@@ -298,7 +297,7 @@ func isAuthorized(w http.ResponseWriter, r *http.Request) error {
 }
 
 func getFormData(w http.ResponseWriter, r *http.Request) error {
- if err := r.ParseForm(); err != nil {
+	if err := r.ParseForm(); err != nil {
 		return err
 	}
 	if err := validateCredentials(w, r); err != nil {
@@ -316,11 +315,10 @@ func getFormData(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-
 func showError(w http.ResponseWriter, r *http.Request, err error) {
 	//log.Panicf(err.Error())
 	fmt.Println(err.Error())
-	debug.PrintStack()
+	//debug.PrintStack()
 	http.Redirect(w, r, "/logout", http.StatusSeeOther)
 }
 
@@ -362,9 +360,7 @@ func validateCredentials(w http.ResponseWriter, r *http.Request) error {
 				aD.User.Password = pW
 				pWH := sha1.New()
 				pWH.Write([]byte(pW))
-
 				pWHS := hex.EncodeToString(pWH.Sum(nil))
-
 				if err := dbCheckCredentials(w, r, uN, pWHS); err == nil {
 					return nil
 				}
@@ -384,73 +380,6 @@ func loadPage(w http.ResponseWriter, r *http.Request) {
 		showError(w, r, errors.New("UI not set"))
 	}
 	renderTemplate(w, r)
-}
-
-func (PageData) loadPageBody(w http.ResponseWriter, r *http.Request) {
-	var tpl bytes.Buffer
-	err := templates.ExecuteTemplate(&tpl, aD.Page.Name+".html", aD)
-	if err != nil {
-		showError(w, r, err)
-	}
-	aD.Page.Body = tpl.String()
-}
-
-func dbIsUsernameValid(w http.ResponseWriter, r *http.Request, username string) bool {
-	uN := "\"" + username + "\""
-	queryString := "select * from user where username == " + uN
-	rows, err := db.Query(queryString)
-	if err != nil {
-		showError(w, r, err)
-	}
-	defer rows.Close()
-	if rows.Next() {
-		return true
-	}
-	return false
-}
-
-func dbSetUserFromSession(w http.ResponseWriter, r *http.Request, sessionToken string) error {
-	queryString := "select id_user, datetimestamp_lastlogin from session where id == \"" + sessionToken + "\""
-	rows, err := db.Query(queryString)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-	if rows.Next() {
-		var idUser int
-		var dTS string
-		err = rows.Scan(&idUser, &dTS)
-		if err != nil {
-			return err
-		}
-		dTSExpr, _ := strconv.ParseInt(dTS, 10, 64)
-		if isTimeExpired(dTSExpr) {
-			return errors.New("time expired")
-		}
-		aD.User.ID = idUser
-		aD.User.SessionToken = sessionToken
-	} else {
-		return errors.New("invalid session")
-	}
-
-	queryString = "select name, role from user where id == " + strconv.Itoa(aD.User.ID)
-	rows, err = db.Query(queryString)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-	if rows.Next() {
-		var name string
-		var role int
-		err = rows.Scan(&name, &role)
-		if err != nil {
-			return err
-		}
-		aD.User.Name = name
-		aD.User.Role = role
-		return nil
-	}
-	return errors.New("session user not found in user list")
 }
 
 func isTimeExpired(dTSExpr int64) bool {
@@ -476,12 +405,87 @@ func setCookie(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func dbCheckCredentials(w http.ResponseWriter, r *http.Request, username string, password string) error {
-	username = "\"" + username + "\""
-	password = "\"" + password + "\""
+func (PageData) loadPageBody(w http.ResponseWriter, r *http.Request) {
+	var tpl bytes.Buffer
+	err := templates.ExecuteTemplate(&tpl, aD.Page.Name+".html", aD)
+	if err != nil {
+		showError(w, r, err)
+	}
+	aD.Page.Body = tpl.String()
+}
 
-	queryString := "select name, role, id from user where username == " + username + " and password == " + password
-	rows, err := db.Query(queryString)
+func dbIsUsernameValid(w http.ResponseWriter, r *http.Request, username string) bool {
+	//queryString := "select * from user where username == " + uN
+	//rows, err := db.Query(queryString)
+	stmt, err := db.Prepare(`select * from user where username = ?`)
+	rows, err := stmt.Query(username)
+	if err != nil {
+		showError(w, r, err)
+	}
+	defer rows.Close()
+	if rows.Next() {
+		return true
+	}
+	return false
+}
+
+func dbSetUserFromSession(w http.ResponseWriter, r *http.Request, sessionToken string) error {
+	//queryString := "select id_user, datetimestamp_lastlogin from session where id == \"" + sessionToken + "\""
+	//rows, err := db.Query(queryString)
+	stmt, err := db.Prepare(`select id_user, datetimestamp_lastlogin from session where id = ?`)
+	rows, err := stmt.Query(sessionToken)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	if rows.Next() {
+		var idUser int
+		var dTS string
+		err := rows.Scan(&idUser, &dTS)
+		if err != nil {
+			return err
+		}
+		dTSExpr, _ := strconv.ParseInt(dTS, 10, 64)
+		if isTimeExpired(dTSExpr) {
+			return errors.New("time expired")
+		}
+		aD.User.ID = idUser
+		aD.User.SessionToken = sessionToken
+	} else {
+		return errors.New("invalid session")
+	}
+
+	//queryString = "select name, role from user where id == " + strconv.Itoa(aD.User.ID)
+	//rows, err = db.Query(queryString)
+	stmt, err = db.Prepare(`select name, role from user where id = ?`)
+	rows, err = stmt.Query(aD.User.ID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	if rows.Next() {
+		var name string
+		var role int
+		err = rows.Scan(&name, &role)
+		if err != nil {
+			return err
+		}
+		aD.User.Name = name
+		aD.User.Role = role
+		return nil
+	}
+	return errors.New("session user not found in user list")
+}
+
+func dbCheckCredentials(w http.ResponseWriter, r *http.Request, username string, password string) error {
+	//username = "\"" + username + "\""
+	//password = "\"" + password + "\""
+
+	//queryString := "select name, role, id from user where username == " + username + " and password == " + password
+	//rows, err := db.Query(queryString)
+	stmt, err := db.Prepare(`select name, role, id from user where username = ? and password = ?`)
+	rows, err := stmt.Query(username, password)
+
 	if err != nil {
 		return err
 	}
@@ -508,8 +512,10 @@ func dbGetUsers(w http.ResponseWriter, r *http.Request) error {
 	aD.Table.Header = RowData{0, []ColData{{Index: 0, Value: "id"}, {Index: 1, Value: "name"}, {Index: 2, Value: "username"}}}
 	aD.Table.Rows = make([]RowData, 0)
 
-	queryString := `select ` + aD.Table.Header.Row[0].Value + `, ` + aD.Table.Header.Row[1].Value + ` from user where ` + aD.Table.Header.Row[2].Value + ` != "admin"`
-	rows, err := db.Query(queryString)
+	//queryString := `select ` + aD.Table.Header.Row[0].Value + `, ` + aD.Table.Header.Row[1].Value + ` from user where ` + aD.Table.Header.Row[2].Value + ` != "admin"`
+	//rows, err := db.Query(queryString)
+	stmt, err := db.Prepare(`select ` + aD.Table.Header.Row[0].Value + `, ` + aD.Table.Header.Row[1].Value + ` from user where ` + aD.Table.Header.Row[2].Value + ` != ?`)
+	rows, err := stmt.Query("admin")
 	if err != nil {
 		return err
 	}

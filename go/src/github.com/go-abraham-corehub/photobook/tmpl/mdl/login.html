@@ -15,13 +15,14 @@
 
       <div style="font-family: 'Pacifico', cursive; font-size: 30px; padding:20px; color:  rgb(13, 112, 158)">
         {{.Title}}</div>
-        <div>
-          {{.User.Status}}
-        </div>
+      <div>
+        {{.User.Status}}
+      </div>
       <div style="padding-top: 40px">
         <form action="/login" method="post" style="text-align: center">
           <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-            <input class="mdl-textfield__input" type="text" id="username" name="username">
+            <input class="mdl-textfield__input" type="text" id="username" name="username"
+              value="{{if .User.Username}}{{.User.Username}}{{else}}{{end}}">
             <label class="mdl-textfield__label" for="username">Username...</label>
           </div>
           <div>
