@@ -92,11 +92,14 @@ type TemplateData struct {
 	Title string
 }
 
-const dataDir = "data"
-const pageDir = dataDir + "/page"
-const tmplDir = "tmpl/mdl"
+const dirRes = `res/`
+const dirImg = dirRes + `img/`
+const dirTmpl = `tmpl/mdl/`
+const dirStatic = `static/`
+const dirFileServer = dirTmpl + `static/`
 
-const pathDB = "db/pb.db"
+const pathDB = `db/`
+const fileNameDB = `pb.db`
 
 var templates *template.Template
 var aD AppData
@@ -105,7 +108,7 @@ var db *sql.DB
 func main() {
 	//initDB()
 	//testDB()
-	fmt.Println("Server Started!, Please access http://localhost:8080")
+	fmt.Println(`Server Started!, Please access http://localhost:8080`)
 	startPhotoBook()
 }
 
@@ -114,35 +117,35 @@ func startPhotoBook() {
 	initApp()
 	initDB()
 	mux := http.NewServeMux()
-	fileServer := http.FileServer(neuteredFileSystem{http.Dir(tmplDir + "/static/")})
-	mux.Handle("/static/", http.StripPrefix("/static/", fileServer))
+	fileServer := http.FileServer(neuteredFileSystem{http.Dir(dirFileServer)})
+	mux.Handle(`/`+dirStatic, http.StripPrefix(`/`+dirStatic, fileServer))
 
-	mux.HandleFunc("/", handlerRoot)
-	mux.HandleFunc("/login", handlerLogin)
-	mux.HandleFunc("/logout", handlerLogout)
-	mux.HandleFunc("/home", handlerHome)
-	mux.HandleFunc("/user/view", handlerViewUser)
-	mux.HandleFunc("/album/view", handlerViewAlbum)
+	mux.HandleFunc(`/`, handlerRoot)
+	mux.HandleFunc(`/login`, handlerLogin)
+	mux.HandleFunc(`/logout`, handlerLogout)
+	mux.HandleFunc(`/home`, handlerHome)
+	mux.HandleFunc(`/user/view`, handlerViewUser)
+	mux.HandleFunc(`/album/view`, handlerViewAlbum)
 	//mux.HandleFunc("/image/view", handlerViewImage)
 	//mux.HandleFunc("/admin/user/edit", handlerAdminUserEdit)
 	//mux.HandleFunc("/admin/user/reset", handlerAdminUserReset)
 	//mux.HandleFunc("/admin/user/delete", handlerAdminUserDelete)
 	//mux.HandleFunc("/user", handlerUser)
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	log.Fatal(http.ListenAndServe(`:8080`, mux))
 }
 
 func parseTemplates() {
 	nUITs := []string{
-		"head",
-		"login",
-		"home",
-		"users",
-		"albums",
-		"images",
-		"image",
+		`head`,
+		`login`,
+		`home`,
+		`users`,
+		`albums`,
+		`images`,
+		`image`,
 	}
 	for i := 0; i < len(nUITs); i++ {
-		nUITs[i] = tmplDir + "/" + nUITs[i] + ".html"
+		nUITs[i] = dirTmpl + nUITs[i] + `.html`
 	}
 	templates = template.Must(template.ParseFiles(nUITs...))
 }
@@ -153,11 +156,11 @@ func initApp() {
 	aD.Page = PageData{}
 	aD.Table = DBTable{}
 	aD.Page.Author = PageAuthor{}
-	aD.Title = "PhotoBook"
+	aD.Title = `PhotoBook`
 }
 
 func initDB() {
-	dbt, err := sql.Open("sqlite3", pathDB)
+	dbt, err := sql.Open(`sqlite3`, pathDB+fileNameDB)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -168,41 +171,41 @@ func handlerRoot(w http.ResponseWriter, r *http.Request) {
 	if err := isAuthorized(w, r); err == nil {
 		loadPage(w, r)
 	} else {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		http.Redirect(w, r, `/login`, http.StatusSeeOther)
 	}
 }
 
 func handlerLogin(w http.ResponseWriter, r *http.Request) {
 	if err := isAuthorized(w, r); err != nil {
 		initApp()
-		aD.UI = "login"
-		if r.Method == "POST" {
+		aD.UI = `login`
+		if r.Method == `POST` {
 			if err := getFormData(w, r); err != nil {
 				aD.User.Status = err.Error()
 			} else {
-				http.Redirect(w, r, "/home", http.StatusSeeOther)
+				http.Redirect(w, r, `/home`, http.StatusSeeOther)
 			}
 		}
 		loadPage(w, r)
 		return
 	}
-	http.Redirect(w, r, "/home", http.StatusSeeOther)
+	http.Redirect(w, r, `/home`, http.StatusSeeOther)
 }
 
 func handlerHome(w http.ResponseWriter, r *http.Request) {
 	if err := isAuthorized(w, r); err != nil {
-		showError(w, r, errors.New("unauthorized access"))
+		showError(w, r, errors.New(`unauthorized access`))
 	} else {
-		aD.User.Status = "Login Successfull"
-		aD.UI = "home"
+		aD.User.Status = `Login Successfull`
+		aD.UI = `home`
 		switch aD.User.Role {
 		case -7:
-			aD.Page.Name = "users"
-			aD.Page.Title = "Dashboard"
+			aD.Page.Name = `users`
+			aD.Page.Title = `Dashboard`
 			dbGetUsers(w, r)
 		default:
-			aD.Page.Name = "albums"
-			aD.Page.Title = "My Albums"
+			aD.Page.Name = `albums`
+			aD.Page.Title = `My Albums`
 			aD.Page.Author.ID = aD.User.ID
 			aD.Page.Author.Name = aD.User.Name
 			dbGetAlbums(w, r)
@@ -215,17 +218,17 @@ func handlerLogout(w http.ResponseWriter, r *http.Request) {
 	if err := isAuthorized(w, r); err == nil {
 		dbDeleteSession(w, r)
 		http.SetCookie(w, &http.Cookie{
-			Name:   "sessionToken",
-			Value:  "",
+			Name:   `sessionToken`,
+			Value:  ``,
 			MaxAge: 0,
 		})
-		if aD.User.Status == "Login Successfull" {
-			aD.User.Status = "Logout Successfull"
+		if aD.User.Status == `Login Successfull` {
+			aD.User.Status = `Logout Successfull`
 		}
-		aD.UI = "login"
+		aD.UI = `login`
 		loadPage(w, r)
 	} else {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		http.Redirect(w, r, `/`, http.StatusSeeOther)
 	}
 }
 
@@ -234,11 +237,11 @@ func handlerViewUser(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
 			showError(w, r, err)
 		}
-		aD.Page.Author.ID, _ = strconv.Atoi(r.Form.Get("id"))
-		aD.Page.Author.Name = r.Form.Get("name")
+		aD.Page.Author.ID, _ = strconv.Atoi(r.Form.Get(`id`))
+		aD.Page.Author.Name = r.Form.Get(`name`)
 		dbGetAlbums(w, r)
-		aD.Page.Name = "albums"
-		aD.Page.Title = aD.Page.Author.Name + "'s Albums"
+		aD.Page.Name = `albums`
+		aD.Page.Title = aD.Page.Author.Name + `'s Albums`
 		loadPage(w, r)
 	} else {
 		showError(w, r, err)
@@ -250,10 +253,10 @@ func handlerViewAlbum(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
 			showError(w, r, err)
 		}
-		idAlbum := r.Form.Get("id")
-		nameAlbum := r.Form.Get("name")
-		aD.Page.Name = "images"
-		aD.Page.Title = aD.Page.Author.Name + "'s " + nameAlbum
+		idAlbum := r.Form.Get(`id`)
+		nameAlbum := r.Form.Get(`name`)
+		aD.Page.Name = `images`
+		aD.Page.Title = aD.Page.Author.Name + `'s ` + nameAlbum
 		dbGetImages(w, r, idAlbum)
 		loadPage(w, r)
 	} else {
@@ -261,46 +264,43 @@ func handlerViewAlbum(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+/*
 func handlerViewImage(w http.ResponseWriter, r *http.Request) {
 	if err := isAuthorized(w, r); err == nil {
 		if err := r.ParseForm(); err != nil {
 			showError(w, r, err)
 		}
-		/*
-			idImage := r.Form.Get("id")
-			nameImage := r.Form.Get("name")
-			aD.Page.Name = "image"
-			aD.Page.Title = aD.Page.Author.Name + "'s " + nameImage
-			dbGetImageLocation(w, idImage)
-			aD.UI = "home"
-			loadPage(w)
-		*/
+		idImage := r.Form.Get("id")
+		nameImage := r.Form.Get("name")
 		aD.Page.Name = "image"
+		aD.Page.Title = aD.Page.Author.Name + "'s " + nameImage
+		dbGetImage(w, r, idImage, nameImage)
 		loadPage(w, r)
 	} else {
 		showError(w, r, err)
 	}
 }
+*/
 
 func isAuthorized(w http.ResponseWriter, r *http.Request) error {
-	if r.Method == "GET" {
-		c, err := r.Cookie("sessionToken")
+	if r.Method == `GET` {
+		c, err := r.Cookie(`sessionToken`)
 		if err == nil {
 			if c.Value == aD.User.SessionToken && aD.User.SessionToken != "" {
 				return nil
 			}
-			return dbSetUserFromSession(w, r, c.Value)
+			return dbRestoreUser(w, r, c.Value)
 		}
-		return errors.New("session expired")
+		return errors.New(`session expired`)
 	}
-	return errors.New("unauthorized access")
+	return errors.New(`unauthorized access`)
 }
 
 func getFormData(w http.ResponseWriter, r *http.Request) error {
 	if err := r.ParseForm(); err != nil {
 		return err
 	}
-	if err := validateCredentials(w, r); err != nil {
+	if err := authenticate(w, r); err != nil {
 		return err
 	}
 	if err := dbDeleteSession(w, r); err != nil {
@@ -319,11 +319,11 @@ func showError(w http.ResponseWriter, r *http.Request, err error) {
 	//log.Panicf(err.Error())
 	fmt.Println(err.Error())
 	//debug.PrintStack()
-	http.Redirect(w, r, "/logout", http.StatusSeeOther)
+	http.Redirect(w, r, `/logout`, http.StatusSeeOther)
 }
 
 func renderTemplate(w http.ResponseWriter, r *http.Request) {
-	err := templates.ExecuteTemplate(w, aD.UI+".html", aD)
+	err := templates.ExecuteTemplate(w, aD.UI+`.html`, aD)
 	if err != nil {
 		showError(w, r, err)
 	}
@@ -333,24 +333,24 @@ func loadMenuItems() {
 	switch aD.User.Role {
 	case -7:
 		aD.MenuItemsRight = []MenuItems{
-			{Item: "Create User", Link: "/createUser"},
-			{Item: "Upload Image", Link: "/uploadImage"},
-			{Item: "Create Album", Link: "/createAlbum"},
-			{Item: "Download Album", Link: "/downloadAlbum"},
+			{Item: `Create User`, Link: `/createUser`},
+			{Item: `Upload Image`, Link: `/uploadImage`},
+			{Item: `Create Album`, Link: `/createAlbum`},
+			{Item: `Download Album`, Link: `/downloadAlbum`},
 		}
 	default:
 		aD.Page.Author.ID = aD.User.ID
 		aD.MenuItemsRight = []MenuItems{
-			{Item: "Upload Image", Link: "/uploadImage"},
-			{Item: "Create Album", Link: "/createAlbum"},
-			{Item: "Download Album", Link: "/downloadAlbum"},
+			{Item: `Upload Image`, Link: `/uploadImage`},
+			{Item: `Create Album`, Link: `/createAlbum`},
+			{Item: `Download Album`, Link: `/downloadAlbum`},
 		}
 	}
 }
 
-func validateCredentials(w http.ResponseWriter, r *http.Request) error {
-	uN := r.Form.Get("username")
-	pW := r.Form.Get("password")
+func authenticate(w http.ResponseWriter, r *http.Request) error {
+	uN := r.Form.Get(`username`)
+	pW := r.Form.Get(`password`)
 	uN, err := conditionString(uN)
 	if err == nil {
 		aD.User.Username = uN
@@ -361,23 +361,23 @@ func validateCredentials(w http.ResponseWriter, r *http.Request) error {
 				pWH := sha1.New()
 				pWH.Write([]byte(pW))
 				pWHS := hex.EncodeToString(pWH.Sum(nil))
-				if err := dbCheckCredentials(w, r, uN, pWHS); err == nil {
+				if err := dbAuth(w, r, uN, pWHS); err == nil {
 					return nil
 				}
-				return errors.New("unregistered password")
+				return errors.New(`unregistered password`)
 			}
 		}
 	}
-	return errors.New("unregistered username")
+	return errors.New(`unregistered username`)
 }
 
 func loadPage(w http.ResponseWriter, r *http.Request) {
 	switch aD.UI {
-	case "home":
+	case `home`:
 		loadMenuItems()
 		aD.Page.loadPageBody(w, r)
-	case "":
-		showError(w, r, errors.New("UI not set"))
+	case ``:
+		showError(w, r, errors.New(`UI not set`))
 	}
 	renderTemplate(w, r)
 }
@@ -398,7 +398,7 @@ func setCookie(w http.ResponseWriter, r *http.Request) error {
 	aD.User.SessionToken = uuid
 	aD.User.Created = time.Now()
 	http.SetCookie(w, &http.Cookie{
-		Name:    "sessionToken",
+		Name:    `sessionToken`,
 		Value:   uuid,
 		Expires: aD.User.Created.Add(120 * time.Second),
 	})
@@ -407,18 +407,16 @@ func setCookie(w http.ResponseWriter, r *http.Request) error {
 
 func (PageData) loadPageBody(w http.ResponseWriter, r *http.Request) {
 	var tpl bytes.Buffer
-	err := templates.ExecuteTemplate(&tpl, aD.Page.Name+".html", aD)
+	err := templates.ExecuteTemplate(&tpl, aD.Page.Name+`.html`, aD)
 	if err != nil {
 		showError(w, r, err)
 	}
 	aD.Page.Body = tpl.String()
 }
 
-func dbIsUsernameValid(w http.ResponseWriter, r *http.Request, username string) bool {
-	//queryString := "select * from user where username == " + uN
-	//rows, err := db.Query(queryString)
+func dbIsUsernameValid(w http.ResponseWriter, r *http.Request, uN string) bool {
 	stmt, err := db.Prepare(`select * from user where username = ?`)
-	rows, err := stmt.Query(username)
+	rows, err := stmt.Query(uN)
 	if err != nil {
 		showError(w, r, err)
 	}
@@ -429,11 +427,11 @@ func dbIsUsernameValid(w http.ResponseWriter, r *http.Request, username string) 
 	return false
 }
 
-func dbSetUserFromSession(w http.ResponseWriter, r *http.Request, sessionToken string) error {
-	//queryString := "select id_user, datetimestamp_lastlogin from session where id == \"" + sessionToken + "\""
-	//rows, err := db.Query(queryString)
-	stmt, err := db.Prepare(`select id_user, datetimestamp_lastlogin from session where id = ?`)
-	rows, err := stmt.Query(sessionToken)
+func dbRestoreUser(w http.ResponseWriter, r *http.Request, sT string) error {
+	stmt, err := db.Prepare(
+		`select id_user, 
+  datetimestamp_lastlogin from session where id = ?`)
+	rows, err := stmt.Query(sT)
 	if err != nil {
 		return err
 	}
@@ -447,16 +445,14 @@ func dbSetUserFromSession(w http.ResponseWriter, r *http.Request, sessionToken s
 		}
 		dTSExpr, _ := strconv.ParseInt(dTS, 10, 64)
 		if isTimeExpired(dTSExpr) {
-			return errors.New("time expired")
+			return errors.New(`time expired`)
 		}
 		aD.User.ID = idUser
-		aD.User.SessionToken = sessionToken
+		aD.User.SessionToken = sT
 	} else {
-		return errors.New("invalid session")
+		return errors.New(`invalid session`)
 	}
 
-	//queryString = "select name, role from user where id == " + strconv.Itoa(aD.User.ID)
-	//rows, err = db.Query(queryString)
 	stmt, err = db.Prepare(`select name, role from user where id = ?`)
 	rows, err = stmt.Query(aD.User.ID)
 	if err != nil {
@@ -474,17 +470,18 @@ func dbSetUserFromSession(w http.ResponseWriter, r *http.Request, sessionToken s
 		aD.User.Role = role
 		return nil
 	}
-	return errors.New("session user not found in user list")
+	return errors.New(`session user not found in user list`)
 }
 
-func dbCheckCredentials(w http.ResponseWriter, r *http.Request, username string, password string) error {
-	//username = "\"" + username + "\""
-	//password = "\"" + password + "\""
-
-	//queryString := "select name, role, id from user where username == " + username + " and password == " + password
-	//rows, err := db.Query(queryString)
-	stmt, err := db.Prepare(`select name, role, id from user where username = ? and password = ?`)
-	rows, err := stmt.Query(username, password)
+func dbAuth(w http.ResponseWriter, r *http.Request, uN string, pW string) error {
+	stmt, err := db.Prepare(
+		`select name,
+		role, 
+		id from user where 
+		username = ? and 
+		password = ?`,
+	)
+	rows, err := stmt.Query(uN, pW)
 
 	if err != nil {
 		return err
@@ -505,17 +502,28 @@ func dbCheckCredentials(w http.ResponseWriter, r *http.Request, username string,
 		aD.User.ID = id
 		return nil
 	}
-	return errors.New("db empty")
+	return errors.New(`db empty`)
 }
 
 func dbGetUsers(w http.ResponseWriter, r *http.Request) error {
-	aD.Table.Header = RowData{0, []ColData{{Index: 0, Value: "id"}, {Index: 1, Value: "name"}, {Index: 2, Value: "username"}}}
-	aD.Table.Rows = make([]RowData, 0)
+	aD.Table.Header = RowData{
+		0,
+		[]ColData{
+			{Index: 0, Value: `id`},
+			{Index: 1, Value: `name`},
+			{Index: 2, Value: `username`},
+		},
+	}
 
-	//queryString := `select ` + aD.Table.Header.Row[0].Value + `, ` + aD.Table.Header.Row[1].Value + ` from user where ` + aD.Table.Header.Row[2].Value + ` != "admin"`
-	//rows, err := db.Query(queryString)
-	stmt, err := db.Prepare(`select ` + aD.Table.Header.Row[0].Value + `, ` + aD.Table.Header.Row[1].Value + ` from user where ` + aD.Table.Header.Row[2].Value + ` != ?`)
-	rows, err := stmt.Query("admin")
+	aD.Table.Rows = make([]RowData, 0)
+	stmt, err := db.Prepare(
+		`select ` +
+			aD.Table.Header.Row[0].Value + `, ` +
+			aD.Table.Header.Row[1].Value +
+			` from user where ` +
+			aD.Table.Header.Row[2].Value +
+			` != ?`)
+	rows, err := stmt.Query(`admin`)
 	if err != nil {
 		return err
 	}
@@ -528,22 +536,40 @@ func dbGetUsers(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
-		aD.Table.Rows = append(aD.Table.Rows, RowData{Index: id, Row: []ColData{{Value: name}}})
+		aD.Table.Rows = append(
+			aD.Table.Rows, RowData{
+				Index: id,
+				Row: []ColData{
+					{Value: name},
+				},
+			},
+		)
 	}
+
 	if len(aD.Table.Rows) > 0 {
 		return nil
 	}
-	return errors.New("db empty")
+	return errors.New(`db empty`)
 }
 
 func dbGetAlbums(w http.ResponseWriter, r *http.Request) error {
-	aD.Table.Header = RowData{0, []ColData{{Index: 0, Value: "name"}, {Index: 1, Value: "id_user"}}}
+	aD.Table.Header = RowData{
+		0,
+		[]ColData{
+			{Index: 0, Value: `name`},
+			{Index: 1, Value: `id_user`},
+		},
+	}
+
 	aD.Table.Rows = make([]RowData, 0)
 
-	//queryString := `select ` + aD.Table.Header.Row[0].Value + ` from album where ` + aD.Table.Header.Row[1].Value + ` == ` + strconv.Itoa(aD.Page.Author.ID)
-	//rows, err := db.Query(queryString)
+	stmt, err := db.Prepare(
+		`select ` +
+			aD.Table.Header.Row[0].Value +
+			` from album where ` +
+			aD.Table.Header.Row[1].Value +
+			`=?`)
 
-	stmt, err := db.Prepare(`select ` + aD.Table.Header.Row[0].Value + ` from album where ` + aD.Table.Header.Row[1].Value + `=?`)
 	rows, err := stmt.Query(strconv.Itoa(aD.Page.Author.ID))
 	if err != nil {
 		return err
@@ -556,22 +582,42 @@ func dbGetAlbums(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
-		aD.Table.Rows = append(aD.Table.Rows, RowData{Index: len(aD.Table.Rows) + 1, Row: []ColData{{Value: name}}})
+		aD.Table.Rows = append(
+			aD.Table.Rows,
+			RowData{
+				Index: len(aD.Table.Rows) + 1,
+				Row: []ColData{
+					{Value: name},
+				},
+			},
+		)
 	}
+
 	if len(aD.Table.Rows) > 0 {
 		return nil
 	}
-	return errors.New("db empty")
+	return errors.New(`db empty`)
 }
 
 func dbGetImages(w http.ResponseWriter, r *http.Request, idAlbum string) error {
-	aD.Table.Header = RowData{0, []ColData{{Index: 0, Value: "name"}, {Index: 1, Value: "id_user"}, {Index: 2, Value: "id_album"}}}
+	aD.Table.Header = RowData{
+		0,
+		[]ColData{
+			{Index: 0, Value: `name`},
+			{Index: 1, Value: `id_user`},
+			{Index: 2, Value: `id_album`},
+		},
+	}
+
 	aD.Table.Rows = make([]RowData, 0)
 
-	//queryString := `select ` + aD.Table.Header.Row[0].Value + ` from image where ` + aD.Table.Header.Row[1].Value + ` == ` + strconv.Itoa(aD.Page.Author.ID) + ` and ` + aD.Table.Header.Row[2].Value + ` == ` + idAlbum
-	//rows, err := db.Query(queryString)
+	stmt, err := db.Prepare(
+		`select ` +
+			aD.Table.Header.Row[0].Value +
+			` from image where ` +
+			aD.Table.Header.Row[1].Value + `=? and ` +
+			aD.Table.Header.Row[2].Value + ` =?`)
 
-	stmt, err := db.Prepare(`select ` + aD.Table.Header.Row[0].Value + ` from image where ` + aD.Table.Header.Row[1].Value + `=? and ` + aD.Table.Header.Row[2].Value + ` =?`)
 	rows, err := stmt.Query(aD.Page.Author.ID, idAlbum)
 	if err != nil {
 		return err
@@ -584,7 +630,14 @@ func dbGetImages(w http.ResponseWriter, r *http.Request, idAlbum string) error {
 		if err != nil {
 			return err
 		}
-		aD.Table.Rows = append(aD.Table.Rows, RowData{Index: len(aD.Table.Rows) + 1, Row: []ColData{{Value: name}}})
+		aD.Table.Rows = append(
+			aD.Table.Rows,
+			RowData{
+				Index: len(aD.Table.Rows) + 1,
+				Row: []ColData{
+					{Value: name},
+				},
+			})
 	}
 	if len(aD.Table.Rows) > 0 {
 		return nil
@@ -592,8 +645,66 @@ func dbGetImages(w http.ResponseWriter, r *http.Request, idAlbum string) error {
 	return errors.New("db empty")
 }
 
+func dbGetImage(w http.ResponseWriter, r *http.Request, idImage string) error {
+	aD.Table.Header = RowData{
+		0,
+		[]ColData{
+			{Index: 0, Value: "name"},
+			{Index: 1, Value: "id_album"},
+			{Index: 2, Value: "type"},
+			{Index: 3, Value: "id"},
+		},
+	}
+	aD.Table.Rows = make([]RowData, 0)
+
+	stmt, err := db.Prepare(
+		`select ` +
+			aD.Table.Header.Row[0].Value +
+			`, ` +
+			aD.Table.Header.Row[1].Value +
+			`, ` +
+			aD.Table.Header.Row[2].Value +
+			` from image where ` +
+			aD.Table.Header.Row[3].Value + `=?`)
+
+	rows, err := stmt.Query(strconv.Atoi(idImage))
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var name string
+		var idAlbum int
+		var imgType string
+		err = rows.Scan(&name, &idAlbum, &imgType)
+		if err != nil {
+			return err
+		}
+		aD.Table.Rows = append(
+			aD.Table.Rows,
+			RowData{
+				Index: len(aD.Table.Rows) + 1,
+				Row: []ColData{
+					{Value: dirImg +
+						strconv.Itoa(idAlbum) +
+						"/" +
+						idImage +
+						"." +
+						imgType},
+					{Value: name},
+				},
+			},
+		)
+	}
+	if len(aD.Table.Rows) > 0 {
+		return nil
+	}
+	return errors.New(`db empty`)
+}
+
 func dbDeleteSession(w http.ResponseWriter, r *http.Request) error {
-	statement, err := db.Prepare("delete from session where id_user=?")
+	statement, err := db.Prepare(`delete from session where id_user=?`)
 	if err != nil {
 		return err
 	}
@@ -614,7 +725,13 @@ func dbStoreSession(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	statement, err = db.Prepare("INSERT INTO session (id, id_user, datetimestamp_lastlogin) VALUES (?, ?, ?)")
+	statement, err = db.Prepare(
+		`INSERT INTO session (
+ id, 
+ id_user, 
+ datetimestamp_lastlogin) 
+ VALUES ( ?, ?, ?)`)
+
 	if err != nil {
 		return err
 	}
@@ -625,11 +742,15 @@ func dbStoreSession(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func dbStoreSessionTx(w http.ResponseWriter, sessionToken string, dTSExpr time.Time) error {
+func dbStoreSessionTx(w http.ResponseWriter, sT string, dTSE time.Time) error {
 
 	stmts := []string{
-		"PRAGMA foreign_keys = true;",
-		"INSERT INTO session (id, id_user, datetimestamp_lastlogin) VALUES (?, ?, ?)",
+		`RAGMA foreign_keys = true;`,
+		`INSERT INTO session (
+  id, 
+  id_user, 
+  datetimestamp_lastlogin) 
+  VALUES (?, ?, ?)`,
 	}
 
 	for i, stmt := range stmts {
@@ -646,11 +767,15 @@ func dbStoreSessionTx(w http.ResponseWriter, sessionToken string, dTSExpr time.T
 		case 0:
 			_, err = tx.Stmt(trashSQL).Exec()
 		case 1:
-			_, err = tx.Stmt(trashSQL).Exec(sessionToken, strconv.Itoa(aD.User.ID), strconv.FormatInt(dTSExpr.Unix(), 10))
+			_, err = tx.Stmt(trashSQL).Exec(
+				sT,
+				strconv.Itoa(aD.User.ID),
+				strconv.FormatInt(dTSE.Unix(),
+					10))
 		}
 
 		if err != nil {
-			fmt.Println("doing rollback")
+			fmt.Println(`doing rollback`)
 			tx.Rollback()
 		} else {
 			tx.Commit()
@@ -675,7 +800,7 @@ func testDB() {
 	*/
 
 	id := 1
-	trashSQL, err := db.Prepare("delete from session where id_user=?")
+	trashSQL, err := db.Prepare(`delete from session where id_user=?`)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -685,14 +810,14 @@ func testDB() {
 	}
 	_, err = tx.Stmt(trashSQL).Exec(id)
 	if err != nil {
-		fmt.Println("doing rollback")
+		fmt.Println(`doing rollback`)
 		tx.Rollback()
 	} else {
 		tx.Commit()
 	}
 
 	id = 2
-	stmt, err := db.Prepare("select name from user where id=?")
+	stmt, err := db.Prepare(`select name from user where id=?`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -721,7 +846,7 @@ func conditionString(str string) (string, error) {
 		strN = strings.ReplaceAll(strN, string(cH), "")
 	}
 	if len(str) != len(strN) {
-		return str, errors.New("unclean string")
+		return str, errors.New(`unclean string`)
 	}
 	return str, nil
 }
@@ -738,7 +863,7 @@ func newUUID() (string, error) {
 	uuid[8] = uuid[8]&^0xc0 | 0x80
 	// version 4 (pseudo-random); see section 4.1.3
 	uuid[6] = uuid[6]&^0xf0 | 0x40
-	return fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:]), nil
+	return fmt.Sprintf(`%x-%x-%x-%x-%x`, uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:]), nil
 }
 
 //To disable Directory Listing
@@ -757,7 +882,7 @@ func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
 
 	s, err := f.Stat()
 	if s.IsDir() {
-		index := strings.TrimSuffix(path, "/") + "/index.html"
+		index := strings.TrimSuffix(path, `/`) + `/index.html`
 		if _, err := nfs.fs.Open(index); err != nil {
 			return nil, err
 		}
