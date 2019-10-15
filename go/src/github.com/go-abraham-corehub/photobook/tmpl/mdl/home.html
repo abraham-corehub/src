@@ -41,6 +41,14 @@
               style="font-size: 30px; color:  rgb(13, 112, 158)">account_circle</i>My Account</a>
           <a href="/logout" class="mdl-navigation__link"><i class="material-icons"
               style="font-size: 30px; color:  rgb(13, 112, 158)">arrow_back</i>Logout</a>
+              {{range .MenuItemsRight}}
+			<a href="{{.Link}}" class="mdl-navigation__link"><i class="material-icons"
+              style="font-size: 30px; color:  rgb(13, 112, 158)">{{.Icon}}</i>{{.Item}}</a>
+          <a href="{{.Link}}" class="mdl-navigation__link"><i class="material-icons"
+              style="font-size: 30px; color:  rgb(13, 112, 158)">{{.Icon}}</i>{{.Item}}</a>
+          <a href="{{.Link}}" class="mdl-navigation__link"><i class="material-icons"
+              style="font-size: 30px; color:  rgb(13, 112, 158)">{{.Icon}}</i>{{.Item}}</a>
+              {{end}}
         </nav>
       </div>
     </div>

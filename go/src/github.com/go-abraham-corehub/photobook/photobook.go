@@ -29,6 +29,7 @@ type Response struct {
 type MenuItems struct {
 	Item string
 	Link string
+ Icon string
 }
 
 //AppData is a custom type to store the Data related to the Application
@@ -36,6 +37,7 @@ type AppData struct {
 	Title          string
 	User           AppUser
 	MenuItemsRight []MenuItems
+ MenuItemsLeft  []MenuItems
 	Page           PageData
 	Table          DBTable
 	State          string
@@ -43,7 +45,8 @@ type AppData struct {
 	Error          string
 }
 
-//PageData is a custom type to store Title and Content / Body of the Web Page to be displayed
+//PageData is a custom type to store Title and 
+//Content / Body of the Web Page to be displayed
 type PageData struct {
 	Name   string
 	Title  string
@@ -51,16 +54,18 @@ type PageData struct {
 	Author PageAuthor
 }
 
-//AppUser is a custom type to store the User's Name and access level (Role)
+//AppUser is a custom type to 
+//store the User's Name and 
+//access level (Role)
 type AppUser struct {
 	Name         string
 	Role         int
 	ID           int
-	UN     string
-	PW     string
+	UN           string
+	PW           string
 	Status       string
-	Token string
-	TC      time.Time
+	Token        string
+	TC           time.Time
 }
 
 //PageAuthor is a custom type 
@@ -87,11 +92,6 @@ type RowData struct {
 type ColData struct {
 	Index int
 	Value string
-}
-
-// TemplateData type
-type TemplateData struct {
-	Title string
 }
 
 const dirRes = `res/`
@@ -129,9 +129,9 @@ func startPhotoBook() {
 	mux.HandleFunc(`/user/view`, handlerViewUser)
 	mux.HandleFunc(`/album/view`, handlerViewAlbum)
 	//mux.HandleFunc("/image/view", handlerViewImage)
-	//mux.HandleFunc("/admin/user/edit", handlerAdminUserEdit)
-	//mux.HandleFunc("/admin/user/reset", handlerAdminUserReset)
-	//mux.HandleFunc("/admin/user/delete", handlerAdminUserDelete)
+	//mux.HandleFunc("/user/edit", handlerUserEdit)
+	//mux.HandleFunc("/user/reset", handlerUserReset)
+	//mux.HandleFunc("/user/delete", handlerUserDelete)
 	//mux.HandleFunc("/user", handlerUser)
 	log.Fatal(http.ListenAndServe(`:8080`, mux))
 }
@@ -332,6 +332,11 @@ func renderTmplt(w http.ResponseWriter, r *http.Request) {
 }
 
 func loadMenuItems() {
+  aD.MenuItemsLeft = []MenuItems{
+  {Item: `Home`, Icon: `home`, Link: `/home`},
+  {Item: `My Account`, Icon: `account_circle`, Link: `/myAccount`},
+  {Item: `Logout`, Icon: `arrow_back`, Link: `/logout`},
+ }
 	switch aD.User.Role {
 	case -7:
 		aD.MenuItemsRight = []MenuItems{
@@ -339,7 +344,7 @@ func loadMenuItems() {
 			{Item: `Upload Image`, Link: `/uploadImage`},
 			{Item: `Create Album`, Link: `/createAlbum`},
 			{Item: `Download Album`, Link: `/downloadAlbum`},
-		}
+  }
 	default:
 		aD.Page.Author.ID = aD.User.ID
 		aD.MenuItemsRight = []MenuItems{
@@ -601,7 +606,7 @@ func dBGetAlbums(w http.ResponseWriter, r *http.Request) error {
 	return errors.New(`db empty`)
 }
 
-func dBGetImgs(w http.ResponseWriter, r *http.Request, idAlbum string) error {
+func dBGetImgs(w http.ResponseWriter, r *http.Request, idA string) error {
 	aD.Table.Header = RowData{
 		0,
 		[]ColData{
@@ -620,7 +625,7 @@ func dBGetImgs(w http.ResponseWriter, r *http.Request, idAlbum string) error {
 			aD.Table.Header.Row[1].Value + `=? and ` +
 			aD.Table.Header.Row[2].Value + ` =?`)
 
-	rows, err := stmt.Query(aD.Page.Author.ID, idAlbum)
+	rows, err := stmt.Query(aD.Page.Author.ID, idA)
 	if err != nil {
 		return err
 	}
@@ -647,7 +652,7 @@ func dBGetImgs(w http.ResponseWriter, r *http.Request, idAlbum string) error {
 	return errors.New("db empty")
 }
 
-func dBGetImg(w http.ResponseWriter, r *http.Request, idImage string) error {
+func dBGetImg(w http.ResponseWriter, r *http.Request, idImg string) error {
 	aD.Table.Header = RowData{
 		0,
 		[]ColData{
@@ -669,7 +674,7 @@ func dBGetImg(w http.ResponseWriter, r *http.Request, idImage string) error {
 			` from image where ` +
 			aD.Table.Header.Row[3].Value + `=?`)
 
-	rows, err := stmt.Query(strconv.Atoi(idImage))
+	rows, err := stmt.Query(strconv.Atoi(idImg))
 	if err != nil {
 		return err
 	}
@@ -691,7 +696,7 @@ func dBGetImg(w http.ResponseWriter, r *http.Request, idImage string) error {
 					{Value: dirImg +
 						strconv.Itoa(idAlbum) +
 						"/" +
-						idImage +
+						idImg +
 						"." +
 						imgType},
 					{Value: name},
