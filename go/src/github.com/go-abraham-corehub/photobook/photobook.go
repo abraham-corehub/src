@@ -56,14 +56,16 @@ type AppUser struct {
 	Name         string
 	Role         int
 	ID           int
-	Username     string
-	Password     string
+	UN     string
+	PW     string
 	Status       string
-	SessionToken string
-	Created      time.Time
+	Token string
+	TC      time.Time
 }
 
-//PageAuthor is a custom type to store the User's Name and access level (Role)
+//PageAuthor is a custom type 
+//to store the User's Name and 
+//access level (Role)
 type PageAuthor struct {
 	Name string
 	ID   int
@@ -95,30 +97,30 @@ type TemplateData struct {
 const dirRes = `res/`
 const dirImg = dirRes + `img/`
 const dirTmpl = `tmpl/mdl/`
-const dirStatic = `static/`
-const dirFileServer = dirTmpl + `static/`
+const dirSttc = `static/`
+const dirFS = dirTmpl + `static/`
 
 const pathDB = `db/`
-const fileNameDB = `pb.db`
+const fNDB = `pb.db`
 
-var templates *template.Template
+var tmplts *template.Template
 var aD AppData
-var db *sql.DB
+var dB *sql.DB
 
 func main() {
 	//initDB()
 	//testDB()
-	fmt.Println(`Server Started!, Please access http://localhost:8080`)
+	fmt.Println(`Server Started!,Please access http://localhost:8080`)
 	startPhotoBook()
 }
 
 func startPhotoBook() {
-	parseTemplates()
+	parseTmplts()
 	initApp()
 	initDB()
 	mux := http.NewServeMux()
-	fileServer := http.FileServer(neuteredFileSystem{http.Dir(dirFileServer)})
-	mux.Handle(`/`+dirStatic, http.StripPrefix(`/`+dirStatic, fileServer))
+	fS := http.FileServer(fSNeutered{http.Dir(dirFS)})
+	mux.Handle(`/`+dirSttc, http.StripPrefix(`/`+dirSttc, fS))
 
 	mux.HandleFunc(`/`, handlerRoot)
 	mux.HandleFunc(`/login`, handlerLogin)
@@ -134,7 +136,7 @@ func startPhotoBook() {
 	log.Fatal(http.ListenAndServe(`:8080`, mux))
 }
 
-func parseTemplates() {
+func parseTmplts() {
 	nUITs := []string{
 		`head`,
 		`login`,
@@ -147,7 +149,7 @@ func parseTemplates() {
 	for i := 0; i < len(nUITs); i++ {
 		nUITs[i] = dirTmpl + nUITs[i] + `.html`
 	}
-	templates = template.Must(template.ParseFiles(nUITs...))
+	tmplts = template.Must(template.ParseFiles(nUITs...))
 }
 
 func initApp() {
@@ -160,11 +162,11 @@ func initApp() {
 }
 
 func initDB() {
-	dbt, err := sql.Open(`sqlite3`, pathDB+fileNameDB)
+	dBT, err := sql.Open(`sqlite3`, pathDB+fNDB)
 	if err != nil {
 		log.Fatal(err)
 	}
-	db = dbt
+	dB = dBT
 }
 
 func handlerRoot(w http.ResponseWriter, r *http.Request) {
@@ -202,13 +204,13 @@ func handlerHome(w http.ResponseWriter, r *http.Request) {
 		case -7:
 			aD.Page.Name = `users`
 			aD.Page.Title = `Dashboard`
-			dbGetUsers(w, r)
+			dBGetUsers(w, r)
 		default:
 			aD.Page.Name = `albums`
 			aD.Page.Title = `My Albums`
 			aD.Page.Author.ID = aD.User.ID
 			aD.Page.Author.Name = aD.User.Name
-			dbGetAlbums(w, r)
+			dBGetAlbums(w, r)
 		}
 		loadPage(w, r)
 	}
@@ -216,7 +218,7 @@ func handlerHome(w http.ResponseWriter, r *http.Request) {
 
 func handlerLogout(w http.ResponseWriter, r *http.Request) {
 	if err := isAuthorized(w, r); err == nil {
-		dbDeleteSession(w, r)
+		dBDelSession(w, r)
 		http.SetCookie(w, &http.Cookie{
 			Name:   `sessionToken`,
 			Value:  ``,
@@ -239,7 +241,7 @@ func handlerViewUser(w http.ResponseWriter, r *http.Request) {
 		}
 		aD.Page.Author.ID, _ = strconv.Atoi(r.Form.Get(`id`))
 		aD.Page.Author.Name = r.Form.Get(`name`)
-		dbGetAlbums(w, r)
+		dBGetAlbums(w, r)
 		aD.Page.Name = `albums`
 		aD.Page.Title = aD.Page.Author.Name + `'s Albums`
 		loadPage(w, r)
@@ -257,7 +259,7 @@ func handlerViewAlbum(w http.ResponseWriter, r *http.Request) {
 		nameAlbum := r.Form.Get(`name`)
 		aD.Page.Name = `images`
 		aD.Page.Title = aD.Page.Author.Name + `'s ` + nameAlbum
-		dbGetImages(w, r, idAlbum)
+		dBGetImgs(w, r, idAlbum)
 		loadPage(w, r)
 	} else {
 		showError(w, r, err)
@@ -286,7 +288,7 @@ func isAuthorized(w http.ResponseWriter, r *http.Request) error {
 	if r.Method == `GET` {
 		c, err := r.Cookie(`sessionToken`)
 		if err == nil {
-			if c.Value == aD.User.SessionToken && aD.User.SessionToken != "" {
+			if c.Value == aD.User.Token && aD.User.Token != "" {
 				return nil
 			}
 			return dbRestoreUser(w, r, c.Value)
@@ -300,16 +302,16 @@ func getFormData(w http.ResponseWriter, r *http.Request) error {
 	if err := r.ParseForm(); err != nil {
 		return err
 	}
-	if err := authenticate(w, r); err != nil {
+	if err := auth(w, r); err != nil {
 		return err
 	}
-	if err := dbDeleteSession(w, r); err != nil {
+	if err := dBDelSession(w, r); err != nil {
 		return err
 	}
 	if err := setCookie(w, r); err != nil {
 		return err
 	}
-	if err := dbStoreSession(w, r); err != nil {
+	if err := dBStoreSession(w, r); err != nil {
 		return err
 	}
 	return nil
@@ -322,8 +324,8 @@ func showError(w http.ResponseWriter, r *http.Request, err error) {
 	http.Redirect(w, r, `/logout`, http.StatusSeeOther)
 }
 
-func renderTemplate(w http.ResponseWriter, r *http.Request) {
-	err := templates.ExecuteTemplate(w, aD.UI+`.html`, aD)
+func renderTmplt(w http.ResponseWriter, r *http.Request) {
+	err := tmplts.ExecuteTemplate(w, aD.UI+`.html`, aD)
 	if err != nil {
 		showError(w, r, err)
 	}
@@ -348,20 +350,20 @@ func loadMenuItems() {
 	}
 }
 
-func authenticate(w http.ResponseWriter, r *http.Request) error {
+func auth(w http.ResponseWriter, r *http.Request) error {
 	uN := r.Form.Get(`username`)
 	pW := r.Form.Get(`password`)
-	uN, err := conditionString(uN)
+	uN, err := cleanStr(uN)
 	if err == nil {
-		aD.User.Username = uN
-		if dbIsUsernameValid(w, r, uN) {
-			pW, err := conditionString(pW)
+		aD.User.UN = uN
+		if dBIsUNValid(w, r, uN) {
+			pW, err := cleanStr(pW)
 			if err == nil {
-				aD.User.Password = pW
+				aD.User.PW = pW
 				pWH := sha1.New()
 				pWH.Write([]byte(pW))
 				pWHS := hex.EncodeToString(pWH.Sum(nil))
-				if err := dbAuth(w, r, uN, pWHS); err == nil {
+				if err := dBAuth(w, r, uN, pWHS); err == nil {
 					return nil
 				}
 				return errors.New(`unregistered password`)
@@ -379,7 +381,7 @@ func loadPage(w http.ResponseWriter, r *http.Request) {
 	case ``:
 		showError(w, r, errors.New(`UI not set`))
 	}
-	renderTemplate(w, r)
+	renderTmplt(w, r)
 }
 
 func isTimeExpired(dTSExpr int64) bool {
@@ -395,27 +397,27 @@ func setCookie(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	aD.User.SessionToken = uuid
-	aD.User.Created = time.Now()
+	aD.User.Token = uuid
+	aD.User.TC = time.Now()
 	http.SetCookie(w, &http.Cookie{
 		Name:    `sessionToken`,
 		Value:   uuid,
-		Expires: aD.User.Created.Add(120 * time.Second),
+		Expires: aD.User.TC.Add(120 * time.Second),
 	})
 	return nil
 }
 
 func (PageData) loadPageBody(w http.ResponseWriter, r *http.Request) {
 	var tpl bytes.Buffer
-	err := templates.ExecuteTemplate(&tpl, aD.Page.Name+`.html`, aD)
+	err := tmplts.ExecuteTemplate(&tpl, aD.Page.Name+`.html`, aD)
 	if err != nil {
 		showError(w, r, err)
 	}
 	aD.Page.Body = tpl.String()
 }
 
-func dbIsUsernameValid(w http.ResponseWriter, r *http.Request, uN string) bool {
-	stmt, err := db.Prepare(`select * from user where username = ?`)
+func dBIsUNValid(w http.ResponseWriter, r *http.Request, uN string) bool {
+	stmt, err := dB.Prepare(`select * from user where username = ?`)
 	rows, err := stmt.Query(uN)
 	if err != nil {
 		showError(w, r, err)
@@ -428,7 +430,7 @@ func dbIsUsernameValid(w http.ResponseWriter, r *http.Request, uN string) bool {
 }
 
 func dbRestoreUser(w http.ResponseWriter, r *http.Request, sT string) error {
-	stmt, err := db.Prepare(
+	stmt, err := dB.Prepare(
 		`select id_user, 
   datetimestamp_lastlogin from session where id = ?`)
 	rows, err := stmt.Query(sT)
@@ -448,12 +450,12 @@ func dbRestoreUser(w http.ResponseWriter, r *http.Request, sT string) error {
 			return errors.New(`time expired`)
 		}
 		aD.User.ID = idUser
-		aD.User.SessionToken = sT
+		aD.User.Token = sT
 	} else {
 		return errors.New(`invalid session`)
 	}
 
-	stmt, err = db.Prepare(`select name, role from user where id = ?`)
+	stmt, err = dB.Prepare(`select name, role from user where id = ?`)
 	rows, err = stmt.Query(aD.User.ID)
 	if err != nil {
 		return err
@@ -473,8 +475,8 @@ func dbRestoreUser(w http.ResponseWriter, r *http.Request, sT string) error {
 	return errors.New(`session user not found in user list`)
 }
 
-func dbAuth(w http.ResponseWriter, r *http.Request, uN string, pW string) error {
-	stmt, err := db.Prepare(
+func dBAuth(w http.ResponseWriter, r *http.Request, uN string, pW string) error {
+	stmt, err := dB.Prepare(
 		`select name,
 		role, 
 		id from user where 
@@ -505,7 +507,7 @@ func dbAuth(w http.ResponseWriter, r *http.Request, uN string, pW string) error 
 	return errors.New(`db empty`)
 }
 
-func dbGetUsers(w http.ResponseWriter, r *http.Request) error {
+func dBGetUsers(w http.ResponseWriter, r *http.Request) error {
 	aD.Table.Header = RowData{
 		0,
 		[]ColData{
@@ -516,7 +518,7 @@ func dbGetUsers(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	aD.Table.Rows = make([]RowData, 0)
-	stmt, err := db.Prepare(
+	stmt, err := dB.Prepare(
 		`select ` +
 			aD.Table.Header.Row[0].Value + `, ` +
 			aD.Table.Header.Row[1].Value +
@@ -552,7 +554,7 @@ func dbGetUsers(w http.ResponseWriter, r *http.Request) error {
 	return errors.New(`db empty`)
 }
 
-func dbGetAlbums(w http.ResponseWriter, r *http.Request) error {
+func dBGetAlbums(w http.ResponseWriter, r *http.Request) error {
 	aD.Table.Header = RowData{
 		0,
 		[]ColData{
@@ -563,7 +565,7 @@ func dbGetAlbums(w http.ResponseWriter, r *http.Request) error {
 
 	aD.Table.Rows = make([]RowData, 0)
 
-	stmt, err := db.Prepare(
+	stmt, err := dB.Prepare(
 		`select ` +
 			aD.Table.Header.Row[0].Value +
 			` from album where ` +
@@ -599,7 +601,7 @@ func dbGetAlbums(w http.ResponseWriter, r *http.Request) error {
 	return errors.New(`db empty`)
 }
 
-func dbGetImages(w http.ResponseWriter, r *http.Request, idAlbum string) error {
+func dBGetImgs(w http.ResponseWriter, r *http.Request, idAlbum string) error {
 	aD.Table.Header = RowData{
 		0,
 		[]ColData{
@@ -611,7 +613,7 @@ func dbGetImages(w http.ResponseWriter, r *http.Request, idAlbum string) error {
 
 	aD.Table.Rows = make([]RowData, 0)
 
-	stmt, err := db.Prepare(
+	stmt, err := dB.Prepare(
 		`select ` +
 			aD.Table.Header.Row[0].Value +
 			` from image where ` +
@@ -645,7 +647,7 @@ func dbGetImages(w http.ResponseWriter, r *http.Request, idAlbum string) error {
 	return errors.New("db empty")
 }
 
-func dbGetImage(w http.ResponseWriter, r *http.Request, idImage string) error {
+func dBGetImg(w http.ResponseWriter, r *http.Request, idImage string) error {
 	aD.Table.Header = RowData{
 		0,
 		[]ColData{
@@ -657,7 +659,7 @@ func dbGetImage(w http.ResponseWriter, r *http.Request, idImage string) error {
 	}
 	aD.Table.Rows = make([]RowData, 0)
 
-	stmt, err := db.Prepare(
+	stmt, err := dB.Prepare(
 		`select ` +
 			aD.Table.Header.Row[0].Value +
 			`, ` +
@@ -703,8 +705,8 @@ func dbGetImage(w http.ResponseWriter, r *http.Request, idImage string) error {
 	return errors.New(`db empty`)
 }
 
-func dbDeleteSession(w http.ResponseWriter, r *http.Request) error {
-	statement, err := db.Prepare(`delete from session where id_user=?`)
+func dBDelSession(w http.ResponseWriter, r *http.Request) error {
+	statement, err := dB.Prepare(`delete from session where id_user=?`)
 	if err != nil {
 		return err
 	}
@@ -715,17 +717,17 @@ func dbDeleteSession(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func dbStoreSession(w http.ResponseWriter, r *http.Request) error {
-	statement, err := db.Prepare(`PRAGMA foreign_keys = true;`)
+func dBStoreSession(w http.ResponseWriter, r *http.Request) error {
+	stmt, err := dB.Prepare(`PRAGMA foreign_keys = true;`)
 	if err != nil {
 		return err
 	}
-	_, err = statement.Exec()
+	_, err = stmt.Exec()
 	if err != nil {
 		return err
 	}
 
-	statement, err = db.Prepare(
+	stmt, err = dB.Prepare(
 		`INSERT INTO session (
  id, 
  id_user, 
@@ -735,14 +737,14 @@ func dbStoreSession(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	_, err = statement.Exec(aD.User.SessionToken, aD.User.ID, aD.User.Created)
+	_, err = stmt.Exec(aD.User.Token, aD.User.ID, aD.User.TC)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func dbStoreSessionTx(w http.ResponseWriter, sT string, dTSE time.Time) error {
+func dBStoreTokenTx(w http.ResponseWriter, t string, dTSE time.Time) error {
 
 	stmts := []string{
 		`RAGMA foreign_keys = true;`,
@@ -754,11 +756,11 @@ func dbStoreSessionTx(w http.ResponseWriter, sT string, dTSE time.Time) error {
 	}
 
 	for i, stmt := range stmts {
-		trashSQL, err := db.Prepare(stmt)
+		trashSQL, err := dB.Prepare(stmt)
 		if err != nil {
 			return err
 		}
-		tx, err := db.Begin()
+		tx, err := dB.Begin()
 		if err != nil {
 			return err
 		}
@@ -768,7 +770,7 @@ func dbStoreSessionTx(w http.ResponseWriter, sT string, dTSE time.Time) error {
 			_, err = tx.Stmt(trashSQL).Exec()
 		case 1:
 			_, err = tx.Stmt(trashSQL).Exec(
-				sT,
+				t,
 				strconv.Itoa(aD.User.ID),
 				strconv.FormatInt(dTSE.Unix(),
 					10))
@@ -787,7 +789,7 @@ func dbStoreSessionTx(w http.ResponseWriter, sT string, dTSE time.Time) error {
 func testDB() {
 	/*
 		queryString := "select name from user"
-		rows, err := db.Query(queryString)
+		rows, err := dB.Query(queryString)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -800,11 +802,11 @@ func testDB() {
 	*/
 
 	id := 1
-	trashSQL, err := db.Prepare(`delete from session where id_user=?`)
+	trashSQL, err := dB.Prepare(`delete from session where id_user=?`)
 	if err != nil {
 		fmt.Println(err)
 	}
-	tx, err := db.Begin()
+	tx, err := dB.Begin()
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -817,7 +819,7 @@ func testDB() {
 	}
 
 	id = 2
-	stmt, err := db.Prepare(`select name from user where id=?`)
+	stmt, err := dB.Prepare(`select name from user where id=?`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -834,7 +836,7 @@ func testDB() {
 
 }
 
-func conditionString(str string) (string, error) {
+func cleanStr(str string) (string, error) {
 	strN := str
 	/*
 		charsTrim := []byte{
@@ -857,7 +859,7 @@ func newUUID() (string, error) {
 	uuid := make([]byte, 16)
 	n, err := io.ReadFull(rand.Reader, uuid)
 	if n != len(uuid) || err != nil {
-		return "", err
+		return ``, err
 	}
 	// variant bits; see section 4.1.1
 	uuid[8] = uuid[8]&^0xc0 | 0x80
@@ -868,14 +870,14 @@ func newUUID() (string, error) {
 
 //To disable Directory Listing
 //https://www.alexedwards.net/blog/disable-http-fileserver-directory-listings
-type neuteredFileSystem struct {
-	fs http.FileSystem
+type fSNeutered struct {
+	fS http.FileSystem
 }
 
 //To disable Directory Listing
 //https://www.alexedwards.net/blog/disable-http-fileserver-directory-listings
-func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
-	f, err := nfs.fs.Open(path)
+func (fSN fSNeutered) Open(path string) (http.File, error) {
+	f, err := fSN.fS.Open(path)
 	if err != nil {
 		return nil, err
 	}
@@ -883,7 +885,7 @@ func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
 	s, err := f.Stat()
 	if s.IsDir() {
 		index := strings.TrimSuffix(path, `/`) + `/index.html`
-		if _, err := nfs.fs.Open(index); err != nil {
+		if _, err := fSN.fS.Open(index); err != nil {
 			return nil, err
 		}
 	}
