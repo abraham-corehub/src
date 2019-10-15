@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 
-  <head>
-    <title>{{.Title}}</title>
-    {{ template "head" }}
-  </head>
+<head>
+  <title>{{.Title}}</title>
+  {{ template "head" }}
+</head>
 
 <body>
   <!-- List with avatar and controls -->
@@ -24,7 +24,7 @@
         </button>
         <div class="appMenuItemsRight">
           <ul class="mdl-menu mdl-menu--bottom-right mdl-js-menu mdl-js-ripple-effect" for="demo-menu-lower-right">
-            {{range .MenuItemsRight}}
+            {{range .MenuItemsR}}
             <li class="mdl-menu__item"><a href="{{.Link}}" class="mdl-menu__item">{{.Item}}</a></li>
             {{end}}
           </ul>
@@ -35,20 +35,10 @@
       <div class="appMenuItemsLeft">
         <span class="mdl-layout-title" style="padding: 10px">{{.User.Name}}</span>
         <nav class="mdl-navigation">
-			<a href="/home" class="mdl-navigation__link"><i class="material-icons"
-              style="font-size: 30px; color:  rgb(13, 112, 158)">home</i>Home</a>
-          <a href="/myaccount" class="mdl-navigation__link"><i class="material-icons"
-              style="font-size: 30px; color:  rgb(13, 112, 158)">account_circle</i>My Account</a>
-          <a href="/logout" class="mdl-navigation__link"><i class="material-icons"
-              style="font-size: 30px; color:  rgb(13, 112, 158)">arrow_back</i>Logout</a>
-              {{range .MenuItemsRight}}
-			<a href="{{.Link}}" class="mdl-navigation__link"><i class="material-icons"
-              style="font-size: 30px; color:  rgb(13, 112, 158)">{{.Icon}}</i>{{.Item}}</a>
+          {{range .MenuItemsL}}
           <a href="{{.Link}}" class="mdl-navigation__link"><i class="material-icons"
               style="font-size: 30px; color:  rgb(13, 112, 158)">{{.Icon}}</i>{{.Item}}</a>
-          <a href="{{.Link}}" class="mdl-navigation__link"><i class="material-icons"
-              style="font-size: 30px; color:  rgb(13, 112, 158)">{{.Icon}}</i>{{.Item}}</a>
-              {{end}}
+          {{end}}
         </nav>
       </div>
     </div>
