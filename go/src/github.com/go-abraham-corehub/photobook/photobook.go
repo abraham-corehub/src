@@ -128,8 +128,8 @@ func startPhotoBook() {
 	mux.HandleFunc(`/home`, handlerHome)
 	mux.HandleFunc(`/user/view`, handlerViewUser)
 	mux.HandleFunc(`/album/view`, handlerViewAlbum)
-	//mux.HandleFunc("/image/view", handlerViewImage)
-	//mux.HandleFunc("/user/edit", handlerUserEdit)
+	//mux.HandleFunc(`/image/view`, handlerViewImage)
+	//mux.HandleFunc(`/user/edit`, handlerUserEdit)
 	//mux.HandleFunc("/user/reset", handlerUserReset)
 	//mux.HandleFunc("/user/delete", handlerUserDelete)
 	//mux.HandleFunc("/user", handlerUser)
@@ -266,21 +266,23 @@ func handlerViewAlbum(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+/*
 func handlerViewImage(w http.ResponseWriter, r *http.Request) {
 	if err := isAuthorized(w, r); err == nil {
 		if err := r.ParseForm(); err != nil {
 			showError(w, r, err)
 		}
-		idImg := r.Form.Get("id")
-		nameImg := r.Form.Get("name")
+		idImage := r.Form.Get("id")
+		nameImage := r.Form.Get("name")
 		aD.Page.Name = "image"
-		aD.Page.Title = aD.Page.Author.Name + "'s " + nameImg
-		dBGetImg(w, r, idImg)
+		aD.Page.Title = aD.Page.Author.Name + "'s " + nameImage
+		dbGetImage(w, r, idImage, nameImage)
 		loadPage(w, r)
 	} else {
 		showError(w, r, err)
 	}
 }
+*/
 
 func isAuthorized(w http.ResponseWriter, r *http.Request) error {
 	if r.Method == `GET` {
