@@ -65,5 +65,5 @@ func main() {
 
 	// Mount Auth to Router
 	mux.Handle("/auth/", Auth.NewServeMux())
-	http.ListenAndServe(":9000", manager.SessionManager.Middleware(mux))
+	http.ListenAndServe(":8080", manager.SessionManager.Middleware(mux))
 }
