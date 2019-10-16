@@ -51,19 +51,19 @@ func main() {
 
 	// Initalize
 	Admin := admin.New(&admin.AdminConfig{DB: dB})
-
-	album := Admin.AddResource(&models.Product{}, &admin.Config{Menu: []string{"Product Management"}})
-	album.Action(&admin.Action{
-		Name: "View On Site",
-		URL: func(record interface{}, context *admin.Context) string {
-			if product, ok := record.(*models.Product); ok {
-				return fmt.Sprintf("/products/%v", product.Code)
-			}
-			return "#"
-		},
-		Modes: []string{"menu_item", "edit"},
-	})
-
+	/*
+		album := Admin.AddResource(&models.Product{}, &admin.Config{Menu: []string{"Product Management"}})
+		album.Action(&admin.Action{
+			Name: "View On Site",
+			URL: func(record interface{}, context *admin.Context) string {
+				if product, ok := record.(*models.Product); ok {
+					return fmt.Sprintf("/products/%v", product.Code)
+				}
+				return "#"
+			},
+			Modes: []string{"menu_item", "edit"},
+		})
+	*/
 	// Allow to use Admin to manage User, Product
 	Admin.AddResource(&User{})
 	Admin.AddResource(&Album{})
