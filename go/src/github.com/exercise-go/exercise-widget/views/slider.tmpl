@@ -1,0 +1,1 @@
+<input type="range" name="points" min="0" max="10">
